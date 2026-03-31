@@ -28,68 +28,24 @@ hook.Add('lrp-view.override', 'ifp-disableView', function()
 	local ply = LocalPlayer()
 	local wep = ply:GetActiveWeapon()
 
-	if (IsValid(wep) and blackList[wep:GetClass()] and not ply:InVehicle()) or not cv_viewEnabled:GetBool() then
+	if (IsValid(wep) and blackList[wep:GetClass()] and not ply:InVehicle())
+	or not cv_viewEnabled:GetBool() or ply:GetViewEntity() ~= ply then
 		return true
 	end
 end)
 
-local function hideHead(doHide)
+local function mainCalcView(ply, pos, ang, fov)
 
-	local ply = LocalPlayer()
 	if not IsValid(ply) then return end
-
-	if ply:InVehicle() or ply:GetViewEntity() ~= ply then
-		doHide = false
-	end
-
-	local head = ply:LookupBone('ValveBiped.Bip01_Head1')
-	ply:ManipulateBoneScale(head, doHide and Vector(0.01, 0.01, 0.01) or Vector(1, 1, 1))
-
-end
-
-local visualRecoil
-local usingSight = true
-
-local function calcView(ply, pos, ang, fov)
 
 	local modIndex = cv_selectedMod:GetInt()
 	local attName = ifpTable.mods[modIndex] and ifpTable.mods[modIndex].att or 'eyes'
 	local viewAtt = ply:GetAttachment(ply:LookupAttachment(attName))
 
-	if not IsValid(ply) or ply:GetViewEntity() ~= ply or not viewAtt then return end
-
-	local wep = ply:GetActiveWeapon()
+	if not viewAtt then return end
 
 	if ply:Alive() then
 		pos, ang = viewAtt.Pos, ang
-
-		-- for lrp guns
-		if IsValid(wep) and wep.Base == 'localrp_gun_base' and modIndex == 0 then
-
-			local animIn = usingSight and wep:GetHoldType() == wep.Sight and wep:GetReady()
-			local aimProgress = math.Approach(wep.aimProgress or 0, animIn and 1 or 0, FrameTime() * (animIn and 1.5 or 2.5))
-			wep.aimProgress = aimProgress
-
-			local recoilCoef = ply:IsListenServerHost() and 10 or 5
-			visualRecoil = Lerp(FrameTime() * recoilCoef, visualRecoil or 0, wep.visualRecoil or 0)
-
-			local handAtt = ply:GetAttachment(ply:LookupAttachment('anim_attachment_rh'))
-			if not handAtt then return end
-
-			local easedProgress = inOutQuad(aimProgress)
-
-			local aimPos = Vector(wep.AimPos.x, wep.AimPos.y, wep.AimPos.z + wep.AimPos.z * visualRecoil / 5)
-
-			local muzzleAng = wep:GetMuzzleAng()
-			local aimAng = Angle(muzzleAng.p - (not wep.SightPos and (muzzleAng.p * visualRecoil * 2.5) or 0), muzzleAng.y, muzzleAng.r)
-
-			wep.smoothHandAng = LerpAngle(0.5, wep.smoothHandAng or handAtt.Ang, handAtt.Ang)
-			local worldVector, worldAngle = LocalToWorld(aimPos, aimAng, handAtt.Pos, wep.smoothHandAng)
-
-			pos = LerpVector(easedProgress, pos, worldVector)
-			ang = LerpAngle(easedProgress, ang, worldAngle)
-
-		end
 	else
 		local ragdoll = ply:GetRagdollEntity()
 		if not ragdoll or not IsValid(ragdoll) then return end
@@ -102,11 +58,12 @@ local function calcView(ply, pos, ang, fov)
 		origin = pos,
 		angles = ang,
 		fov = fov,
-		znear = (wep.Base == 'localrp_gun_base' and wep.aimProgress >= 0.5) and 1.5 or 3,
+		znear = 3,
 		drawviewer = true,
 	}
 
-	if ifpTable.mods[modIndex] and modIndex > 0 and view and ply:Alive() then
+	-- apply view modifiers
+	if ifpTable.mods[modIndex] and modIndex > 0 and ply:Alive() then
 		local mod = ifpTable.mods[modIndex]
 
 		if mod.offset then
@@ -125,6 +82,107 @@ local function calcView(ply, pos, ang, fov)
 	end
 
 	return view
+
+end
+
+local usingSight = true
+local visualRecoil, smoothHandAng
+
+local customWepView = {
+
+	-- example:
+	-- ['weapon_class'] = {
+	-- 	offset = Vector(0, 0, 0),
+	-- 	angles = Angle(0, 0, 0),
+	-- 	znear = 1.5
+	-- }
+
+}
+
+local function weaponCalcView(ply, pos, ang, fov)
+
+	local wep = ply:GetActiveWeapon()
+	local lrpWep = wep.Base == 'localrp_gun_base'
+	local customWep = customWepView[wep:GetClass()]
+
+	if not lrpWep and not customWep then return end
+
+	local useRecoil, aimPos, aimAng
+
+	if lrpWep then
+		if not wep.AimPos then return end
+		useRecoil = true
+	end
+
+	local animIn = usingSight and ( lrpWep and (wep:GetHoldType() == wep.Sight and wep:GetReady()) or ply:KeyDown(IN_ATTACK2) )
+	local aimProgress = math.Approach(wep.aimProgress or 0, animIn and 1 or 0, FrameTime() * (animIn and 1 or 3))
+	wep.aimProgress = aimProgress
+	if aimProgress <= 0 then return end
+
+	local handAtt = ply:GetAttachment(ply:LookupAttachment('anim_attachment_rh'))
+	if not handAtt then return end
+
+	if animIn then
+		aimProgress = math.Clamp(aimProgress - 0.4, 0, 1) / 0.6
+	end
+	local easedProgress = inOutQuad(aimProgress)
+
+	if useRecoil then
+		local recoilCoef = ply:IsListenServerHost() and 10 or 5
+		visualRecoil = Lerp(FrameTime() * recoilCoef, visualRecoil or 0, wep.visualRecoil or 0)
+		aimPos = Vector(wep.AimPos.x, wep.AimPos.y, wep.AimPos.z + wep.AimPos.z * visualRecoil / 5)
+		local muzzleAng = wep:GetMuzzleAng()
+		aimAng = Angle(muzzleAng.p - (not wep.SightPos and (muzzleAng.p * visualRecoil * 2.5) or 0), muzzleAng.y, muzzleAng.r)
+	else
+		aimPos = customWep.offset or Vector()
+		aimAng = customWep.angles or Angle()
+	end
+
+	local view = mainCalcView(ply, pos, ang, fov)
+	smoothHandAng = LerpAngle(0.5, smoothHandAng or handAtt.Ang, handAtt.Ang)
+	local worldVector, worldAngle = LocalToWorld(aimPos, aimAng, handAtt.Pos, smoothHandAng)
+
+	view.origin = LerpVector(easedProgress, view.origin, worldVector)
+	view.angles = LerpAngle(easedProgress, view.angles, worldAngle)
+	view.znear = 1.5
+
+	return view
+
+end
+
+local function calcView(ply, pos, ang, fov)
+
+	local wep = ply:GetActiveWeapon()
+
+	if IsValid(wep) and (wep.Base == 'localrp_gun_base' or customWepView[wep:GetClass()]) then
+		local view = weaponCalcView(ply, pos, ang, fov)
+		if view then return view end
+	end
+
+	return mainCalcView(ply, pos, ang, fov)
+
+end
+
+local function renderWeaponView(pos, ang, fov)
+
+	local view = weaponCalcView(LocalPlayer(), pos, ang, fov)
+	if not view then return end
+
+	render.Clear(0, 0, 0, 255, true, true, true)
+	render.RenderView({
+		x				= 0,
+		y				= 0,
+		w				= ScrW(),
+		h				= ScrH(),
+		angles			= view.angles,
+		origin			= view.origin,
+		drawhud			= true,
+		drawviewmodel	= false,
+		dopostprocess	= true,
+		drawmonitors	= true,
+	})
+
+	return true
 
 end
 
@@ -151,7 +209,7 @@ local function renderCrosshair()
 
 	local ply = LocalPlayer()
 
-	if ply:InVehicle() or not ply:Alive() or not cv_chEnabled:GetBool() or ply:GetViewEntity() ~= ply then return end
+	if ply:InVehicle() or not ply:Alive() or not cv_chEnabled:GetBool() then return end
 
 	if hook.Run('octolib.delay.chShouldDraw') then return end
 
@@ -205,7 +263,7 @@ end
 local function applyShaders()
 
 	local ply = LocalPlayer()
-	if not IsValid(ply) or ply:GetViewEntity() ~= ply then return end
+	if not IsValid(ply) then return end
 
 	local modIndex = cv_selectedMod:GetInt()
 	if modIndex == 0 then return end
@@ -219,7 +277,7 @@ local function lockViewAngle(cmd)
 
 	local ply = LocalPlayer()
 
-	if not cv_lockEnabled:GetBool() or not ply:Alive() or ply:GetViewEntity() ~= ply then return end
+	if not cv_lockEnabled:GetBool() or not ply:Alive() then return end
 
 	local down = math.Clamp(-cv_maxLock:GetInt() + 5, -90, -70)
 	local up = math.Clamp(cv_maxLock:GetInt(), 75, 90)
@@ -259,7 +317,7 @@ local function blackScreen()
 	local handAtt = ply:GetAttachment(ply:LookupAttachment('anim_attachment_rh'))
 	if not eyeAtt or not handAtt then return end
 
-	if ply:GetViewEntity() == ply and ply:Alive() and ply:GetMoveType() ~= MOVETYPE_NOCLIP then
+	if ply:Alive() and ply:GetMoveType() ~= MOVETYPE_NOCLIP then
 		local wep = ply:GetActiveWeapon()
 		local inSight = IsValid(wep) and wep.Base == 'localrp_gun_base' and wep.aimProgress >= 0.5
 
@@ -283,7 +341,7 @@ local function useSightKey(ply, key)
 	if ply:InVehicle() or cv_selectedMod:GetInt() ~= 0 then return end
 
 	local wep = ply:GetActiveWeapon()
-	if not IsValid(wep) or wep.Base ~= 'localrp_gun_base' then return end
+	if not IsValid(wep) or (wep.Base ~= 'localrp_gun_base' and not customWepView[wep:GetClass()]) then return end
 
 	if key == MOUSE_MIDDLE and wep:GetReady() then
 		timer.Simple(0.2, function()
@@ -293,16 +351,29 @@ local function useSightKey(ply, key)
 
 	if key == MOUSE_RIGHT and usingSight then
 		usingSight = false
-		timer.Simple(0.25, function()
+		timer.Simple(0.2, function()
 			usingSight = true
 		end)
 	end
 
 end
 
+local function hideHead(doHide)
+
+	local ply = LocalPlayer()
+	if not IsValid(ply) then return end
+
+	if ply:InVehicle() then doHide = false end
+
+	local head = ply:LookupBone('ValveBiped.Bip01_Head1')
+	ply:ManipulateBoneScale(head, doHide and Vector(0.01, 0.01, 0.01) or Vector(1, 1, 1))
+
+end
+
 local function enableView()
 
 	hook.Add('CalcView', 'ifp-hook', calcView)
+	hook.Add('RenderScene', 'ifp-hook', renderWeaponView)
 	hook.Add('PostDrawTranslucentRenderables', 'ifp-hook', renderCrosshair)
 	hook.Add('RenderScreenspaceEffects', 'ifp-hook', applyShaders)
 	hook.Add('CreateMove', 'ifp-hook', lockViewAngle)
@@ -312,11 +383,14 @@ local function enableView()
 
 	hideHead(true)
 
+	ifpTable.active = true
+
 end
 
 local function disableView()
 
 	hook.Remove('CalcView', 'ifp-hook')
+	hook.Remove('RenderScene', 'ifp-hook')
 	hook.Remove('PostDrawTranslucentRenderables', 'ifp-hook')
 	hook.Remove('RenderScreenspaceEffects', 'ifp-hook')
 	hook.Remove('CreateMove', 'ifp-hook')
@@ -326,15 +400,17 @@ local function disableView()
 
 	hideHead(false)
 
+	ifpTable.active = false
+
 end
 
 hook.Add('Think', 'ifp-override', function()
 
 	local override = hook.Run('lrp-view.override') == true
 
-	if override then
+	if override and ifpTable.active then
 		disableView()
-	elseif not override then
+	elseif not override and not ifpTable.active then
 		enableView()
 	end
 
