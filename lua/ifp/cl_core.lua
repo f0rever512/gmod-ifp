@@ -25,6 +25,7 @@ local blackList = {
 }
 
 hook.Add('lrp-view.override', 'ifp-disableView', function()
+
 	local ply = LocalPlayer()
 	local wep = ply:GetActiveWeapon()
 
@@ -32,6 +33,12 @@ hook.Add('lrp-view.override', 'ifp-disableView', function()
 	or not cv_viewEnabled:GetBool() or ply:GetViewEntity() ~= ply then
 		return true
 	end
+
+end)
+
+hook.Add('lrp-view.chShouldDraw', 'ifp-disableCh', function()
+	local ply = LocalPlayer()
+	if ply:InVehicle() or not ply:Alive() or not cv_chEnabled:GetBool() then return false end
 end)
 
 local function mainCalcView(ply, pos, ang, fov)
@@ -205,13 +212,11 @@ local hl2weps = {
 local chIcon = Material('materials/forever512/ifp_crosshair.png')
 local chPosOff, chAngOff = Vector(0, 0, 0), Angle(0, -90, 90)
 
-local function renderCrosshair()
-
-	local ply = LocalPlayer()
-
-	if ply:InVehicle() or not ply:Alive() or not cv_chEnabled:GetBool() then return end
+local function drawCrosshair()
 
 	if hook.Run('octolib.delay.chShouldDraw') then return end
+
+	local ply = LocalPlayer()
 
 	local override = hook.Run('lrp-view.chShouldDraw', ply)
 	if override == nil then
@@ -238,21 +243,18 @@ local function renderCrosshair()
 	end
 
 	local _icon, _alpha, _scale = hook.Run('lrp-view.chOverride', tr)
-	-- local n = tr.Hit and tr.HitNormal or -aim
-	-- if math.abs(n.z) > 0.98 then
-	-- 	n:Add(-aim * 0.01)
-	-- end
 	local chPos, chAng = LocalToWorld(chPosOff, chAngOff, tr.HitPos or endpos, ply:EyeAngles())
-	cam.Start3D2D(chPos, chAng, math.pow(tr.Fraction, 0.6) * (_scale or 0.25))
+
+	cam.Start3D2D(chPos, chAng, math.pow(tr.Fraction, 0.8) * (_scale or 0.25))
 	cam.IgnoreZ(true)
 	if not hook.Run('lrp-view.chPaint', tr, _icon) then
 		if _icon then
-			surface.SetDrawColor(255,255,255, _alpha or 150)
+			surface.SetDrawColor(255, 255, 255, _alpha or 150)
 		else
 			local clrR, clrG, clrB = cv_chClrR:GetInt(), cv_chClrG:GetInt(), cv_chClrB:GetInt()
 			surface.SetDrawColor(clrR, clrG, clrB, _alpha or 200)
 		end
-		surface.SetMaterial(chIcon)
+		surface.SetMaterial(_icon or chIcon)
 		surface.DrawTexturedRect(-32, -32, 64, 64)
 	end
 	cam.IgnoreZ(false)
@@ -374,7 +376,7 @@ local function enableView()
 
 	hook.Add('CalcView', 'ifp-hook', calcView)
 	hook.Add('RenderScene', 'ifp-hook', renderWeaponView)
-	hook.Add('PostDrawTranslucentRenderables', 'ifp-hook', renderCrosshair)
+	hook.Add('PostDrawTranslucentRenderables', 'ifp-hook', drawCrosshair)
 	hook.Add('RenderScreenspaceEffects', 'ifp-hook', applyShaders)
 	hook.Add('CreateMove', 'ifp-hook', lockViewAngle)
 	hook.Add('HUDShouldDraw', 'ifp-hook', hideDefCrosshair)
