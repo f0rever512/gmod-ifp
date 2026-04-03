@@ -43,18 +43,32 @@ local function shaderWarnMenu()
 end
 
 ifpTable.mods = {
+
+	-- example
+	-- {
+	-- 	name = 'example mod',
+	-- 	att = 'eyes',
+	-- 	useAttAngles = false,
+	-- 	offset = Vector(0, 0, 0),
+	-- 	angles = Angle(0, 0, 0),
+	-- 	fov = 0,
+	-- 	znear = 1.5,
+	-- 	shaderFunc = function()
+	-- 		-- custom shader func called by RenderScreenspaceEffects hook
+	-- 	end,
+	-- }
+
 	{
 		name = 'BodyCam Mod',
-
 		att = 'forward',
+		useAttAngles = true,
 		offset = Vector(5, 0, -5),
 		angles = Angle(0, 0, 0),
 		fov = 30,
 		znear = 1,
-
 		shaderFunc = function()
 
-			-- simple custom shaders check
+			-- "simple custom shaders" addon check
 			if not render.DrawMercFisheye then
 				if not shaderWarn then
 					if cv_shaderWarn:GetBool() then

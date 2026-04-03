@@ -44,22 +44,24 @@ end)
 
 local function mainCalcView(ply, pos, ang, fov)
 
-	if not IsValid(ply) then return end
-
 	local modIndex = cv_selectedMod:GetInt()
 	local attName = ifpTable.mods[modIndex] and ifpTable.mods[modIndex].att or 'eyes'
-	local viewAtt = ply:GetAttachment(ply:LookupAttachment(attName))
 
-	if not viewAtt then return end
+	local viewAtt
 
-	if ply:Alive() then
-		pos, ang = viewAtt.Pos, ang
+	if not ply:Alive() then
+		local deathRag = ply:GetRagdollEntity()
+		if not IsValid(deathRag) then return end
+
+		viewAtt = deathRag:GetAttachment(deathRag:LookupAttachment(attName))
+		if not viewAtt then return end
+
+		pos, ang = viewAtt.Pos, viewAtt.Ang
 	else
-		local ragdoll = ply:GetRagdollEntity()
-		if not ragdoll or not IsValid(ragdoll) then return end
+		viewAtt = ply:GetAttachment(ply:LookupAttachment(attName))
+		if not viewAtt then return end
 
-		local ragEyeAtt = ragdoll:GetAttachment(ragdoll:LookupAttachment('eyes'))
-		pos, ang = ragEyeAtt.Pos, ragEyeAtt.Ang
+		pos = viewAtt.Pos
 	end
 
 	local view = {
@@ -71,17 +73,21 @@ local function mainCalcView(ply, pos, ang, fov)
 	}
 
 	-- apply view modifiers
-	if ifpTable.mods[modIndex] and modIndex > 0 and ply:Alive() then
+	if ifpTable.mods[modIndex] and modIndex > 0 then
 		local mod = ifpTable.mods[modIndex]
 
 		if mod.offset then
-			local worldPos = LocalToWorld(mod.offset, Angle(), viewAtt.Pos, viewAtt.Ang)
+			local worldPos = LocalToWorld(mod.offset, angle_zero, pos, viewAtt.Ang)
 			view.origin = worldPos
 		end
 
 		if mod.angles then
-			local _, worldAng = LocalToWorld(Vector(), mod.angles, viewAtt.Pos, viewAtt.Ang)
-			worldAng.r = 0
+			local _, worldAng = LocalToWorld(vector_origin, mod.angles,
+				vector_origin, mod.useAttAngles and viewAtt.Ang or ang)
+
+			if ply:Alive() then
+				worldAng.r = 0
+			end
 			view.angles = worldAng
 		end
 
@@ -94,7 +100,6 @@ local function mainCalcView(ply, pos, ang, fov)
 end
 
 local usingSight = true
-local visualRecoil, smoothHandAng
 
 ifpTable.customWepView = {
 
@@ -110,19 +115,23 @@ ifpTable.customWepView = {
 local function weaponCalcView(ply, pos, ang, fov)
 
 	local wep = ply:GetActiveWeapon()
+	if not IsValid(wep) then return end
+
 	local lrpWep = wep.Base == 'localrp_gun_base'
 	local customWep = ifpTable.customWepView[wep:GetClass()]
 
 	if not lrpWep and not customWep then return end
 
-	local useRecoil, aimPos, aimAng
+	local useRecoil, animIn, visualRecoil, smoothHandAng, aimPos, aimAng
 
 	if lrpWep then
 		if not wep.AimPos then return end
 		useRecoil = true
+		animIn = usingSight and wep:GetHoldType() == wep.Sight and wep:GetReady()
+	else
+		animIn = usingSight and ply:KeyDown(IN_ATTACK2)
 	end
 
-	local animIn = usingSight and ( lrpWep and (wep:GetHoldType() == wep.Sight and wep:GetReady()) or ply:KeyDown(IN_ATTACK2) )
 	local aimProgress = math.Approach(wep.aimProgress or 0, animIn and 1 or 0, FrameTime() * (animIn and 1 or 3))
 	wep.aimProgress = aimProgress
 	if aimProgress <= 0 then return end
