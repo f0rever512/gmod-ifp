@@ -17,6 +17,7 @@ local cv_chClrB = CreateClientConVar('cl_ifp_crosshair_color_b', '255')
 local cv_lockEnabled = CreateClientConVar('cl_ifp_lock_enabled', '1')
 local cv_maxLock = CreateClientConVar('cl_ifp_lock_max', '80')
 local cv_selectedMod = CreateClientConVar('cl_ifp_mod', '0') -- set 0 for disable view mod
+local cv_wepAimKey = CreateClientConVar('cl_ifp_key_weapon_aim', MOUSE_MIDDLE)
 
 local blackList = {
 	weapon_physgun = true,
@@ -95,7 +96,7 @@ end
 local usingSight = true
 local visualRecoil, smoothHandAng
 
-local customWepView = {
+ifpTable.customWepView = {
 
 	-- example:
 	-- ['weapon_class'] = {
@@ -110,7 +111,7 @@ local function weaponCalcView(ply, pos, ang, fov)
 
 	local wep = ply:GetActiveWeapon()
 	local lrpWep = wep.Base == 'localrp_gun_base'
-	local customWep = customWepView[wep:GetClass()]
+	local customWep = ifpTable.customWepView[wep:GetClass()]
 
 	if not lrpWep and not customWep then return end
 
@@ -161,7 +162,7 @@ local function calcView(ply, pos, ang, fov)
 
 	local wep = ply:GetActiveWeapon()
 
-	if IsValid(wep) and (wep.Base == 'localrp_gun_base' or customWepView[wep:GetClass()]) then
+	if IsValid(wep) and (wep.Base == 'localrp_gun_base' or ifpTable.customWepView[wep:GetClass()]) then
 		local view = weaponCalcView(ply, pos, ang, fov)
 		if view then return view end
 	end
@@ -295,19 +296,7 @@ local function lockViewAngle(cmd)
 end
 
 local function hideDefCrosshair(name)
-
-	if name ~= 'CHudCrosshair' then return end
-
-	local ply = LocalPlayer()
-	if not IsValid(ply) or not ply:Alive() then return end
-
-	local wep = ply:GetActiveWeapon()
-	if IsValid(wep) and blackList[wep:GetClass()] then
-		return true
-	end
-
-	return false
-
+	if name == 'CHudCrosshair' then return false end
 end
 
 local function blackScreen()
@@ -340,22 +329,22 @@ end
 local function useSightKey(ply, key)
 
 	if not IsFirstTimePredicted() then return end
-	if ply:InVehicle() or cv_selectedMod:GetInt() ~= 0 then return end
 
-	local wep = ply:GetActiveWeapon()
-	if not IsValid(wep) or (wep.Base ~= 'localrp_gun_base' and not customWepView[wep:GetClass()]) then return end
-
-	if key == MOUSE_MIDDLE and wep:GetReady() then
-		timer.Simple(0.2, function()
+	if key == cv_wepAimKey:GetInt() then
+		local wep = ply:GetActiveWeapon()
+		if IsValid(wep) and ( (wep.Base == 'localrp_gun_base' and wep:GetReady()) or ifpTable.customWepView[wep:GetClass()] ) then
 			usingSight = not usingSight
-		end)
+		end
 	end
 
 	if key == MOUSE_RIGHT and usingSight then
-		usingSight = false
-		timer.Simple(0.2, function()
-			usingSight = true
-		end)
+		local wep = ply:GetActiveWeapon()
+		if IsValid(wep) and wep.Base == 'localrp_gun_base' then
+			usingSight = false
+			timer.Simple(0.2, function()
+				usingSight = true
+			end)
+		end
 	end
 
 end
