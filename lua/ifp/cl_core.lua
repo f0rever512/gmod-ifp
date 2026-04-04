@@ -18,6 +18,7 @@ local cv_lockEnabled = CreateClientConVar('cl_ifp_lock_enabled', '1')
 local cv_maxLock = CreateClientConVar('cl_ifp_lock_max', '80')
 local cv_selectedMod = CreateClientConVar('cl_ifp_mod', '0') -- set 0 for disable view mod
 local cv_wepAimKey = CreateClientConVar('cl_ifp_key_weapon_aim', MOUSE_MIDDLE)
+local cv_fovMultiplier = CreateClientConVar('cl_ifp_fov_multiplier', '1', true, false, 'Float multiplier view FOV', 0.75, 1.25)
 
 local blackList = {
 	weapon_physgun = true,
@@ -67,7 +68,7 @@ local function mainCalcView(ply, pos, ang, fov)
 	local view = {
 		origin = pos,
 		angles = ang,
-		fov = fov,
+		fov = fov * cv_fovMultiplier:GetFloat(),
 		znear = 3,
 		drawviewer = true,
 	}
