@@ -19,6 +19,7 @@ local cv_maxLock = CreateClientConVar('cl_ifp_lock_max', '80')
 local cv_selectedMod = CreateClientConVar('cl_ifp_mod', '0') -- set 0 for disable view mod
 local cv_wepAimKey = CreateClientConVar('cl_ifp_key_weapon_aim', MOUSE_MIDDLE)
 local cv_fovMultiplier = CreateClientConVar('cl_ifp_fov_multiplier', '1', true, false, 'Float multiplier view FOV', 0.75, 1.25)
+local cv_disableWhenAiming = CreateClientConVar('cl_ifp_disable_when_aim', '0')
 
 local blackList = {
 	weapon_physgun = true,
@@ -40,7 +41,8 @@ end)
 
 hook.Add('lrp-view.chShouldDraw', 'ifp-disableCh', function()
 	local ply = LocalPlayer()
-	if ply:InVehicle() or not ply:Alive() or not cv_chEnabled:GetBool() then return false end
+	if ply:InVehicle() or not ply:Alive() or not cv_chEnabled:GetBool()
+		or ifpTable.aimingWithoutView then return false end
 end)
 
 local function mainCalcView(ply, pos, ang, fov)
@@ -101,6 +103,7 @@ local function mainCalcView(ply, pos, ang, fov)
 end
 
 local usingSight = true
+local smoothHandAng, visualRecoil
 
 ifpTable.customWepView = {
 
@@ -123,7 +126,7 @@ local function weaponCalcView(ply, pos, ang, fov)
 
 	if not lrpWep and not customWep then return end
 
-	local useRecoil, animIn, visualRecoil, smoothHandAng, aimPos, aimAng
+	local useRecoil, animIn, aimPos, aimAng
 
 	if lrpWep then
 		if not wep.AimPos then return end
@@ -137,8 +140,11 @@ local function weaponCalcView(ply, pos, ang, fov)
 	wep.aimProgress = aimProgress
 	if aimProgress <= 0 then return end
 
+	local viewAimingDisabled = cv_disableWhenAiming:GetBool() and not lrpWep
+	ifpTable.aimingWithoutView = animIn and viewAimingDisabled
+
 	local handAtt = ply:GetAttachment(ply:LookupAttachment('anim_attachment_rh'))
-	if not handAtt then return end
+	if not handAtt and not viewAimingDisabled then return end
 
 	if animIn then
 		aimProgress = math.Clamp(aimProgress - 0.4, 0, 1) / 0.6
@@ -157,12 +163,21 @@ local function weaponCalcView(ply, pos, ang, fov)
 	end
 
 	local view = mainCalcView(ply, pos, ang, fov)
-	smoothHandAng = LerpAngle(0.5, smoothHandAng or handAtt.Ang, handAtt.Ang)
-	local worldVector, worldAngle = LocalToWorld(aimPos, aimAng, handAtt.Pos, smoothHandAng)
+	if not view then return end
 
-	view.origin = LerpVector(easedProgress, view.origin, worldVector)
-	view.angles = LerpAngle(easedProgress, view.angles, worldAngle)
+	local worldVector, worldAngle
+	if not viewAimingDisabled then
+		smoothHandAng = LerpAngle(0.5, smoothHandAng or handAtt.Ang, handAtt.Ang)
+		worldVector, worldAngle = LocalToWorld(aimPos, aimAng, handAtt.Pos, smoothHandAng)
+	else
+		view.drawviewer = false
+	end
+
+	view.origin = LerpVector(easedProgress, view.origin, viewAimingDisabled and pos or worldVector)
+	view.angles = LerpAngle(easedProgress, view.angles, viewAimingDisabled and ang or worldAngle)
 	view.znear = 1.5
+
+	ifpTable.weaponViewActive = true
 
 	return view
 
@@ -176,6 +191,8 @@ local function calcView(ply, pos, ang, fov)
 		local view = weaponCalcView(ply, pos, ang, fov)
 		if view then return view end
 	end
+
+	ifpTable.weaponViewActive = false
 
 	return mainCalcView(ply, pos, ang, fov)
 
@@ -195,13 +212,17 @@ local function renderWeaponView(pos, ang, fov)
 		angles			= view.angles,
 		origin			= view.origin,
 		drawhud			= true,
-		drawviewmodel	= false,
 		dopostprocess	= true,
 		drawmonitors	= true,
 	})
 
 	return true
 
+end
+
+local function preDrawViewModel(_, _, wep)
+	if not ifpTable.weaponViewActive then return end
+	if wep.aimProgress <= 0.8 then return true end
 end
 
 local hl2weps = {
@@ -375,6 +396,7 @@ local function enableView()
 
 	hook.Add('CalcView', 'ifp-hook', calcView)
 	hook.Add('RenderScene', 'ifp-hook', renderWeaponView)
+	hook.Add('PreDrawViewModel', 'ifp-hook', preDrawViewModel)
 	hook.Add('PostDrawTranslucentRenderables', 'ifp-hook', drawCrosshair)
 	hook.Add('RenderScreenspaceEffects', 'ifp-hook', applyShaders)
 	hook.Add('CreateMove', 'ifp-hook', lockViewAngle)
@@ -385,6 +407,7 @@ local function enableView()
 	hideHead(true)
 
 	ifpTable.active = true
+	ifpTable.aimingWithoutView = false
 
 end
 
@@ -392,6 +415,7 @@ local function disableView()
 
 	hook.Remove('CalcView', 'ifp-hook')
 	hook.Remove('RenderScene', 'ifp-hook')
+	hook.Remove('PreDrawViewModel', 'ifp-hook')
 	hook.Remove('PostDrawTranslucentRenderables', 'ifp-hook')
 	hook.Remove('RenderScreenspaceEffects', 'ifp-hook')
 	hook.Remove('CreateMove', 'ifp-hook')
