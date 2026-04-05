@@ -27,7 +27,7 @@ local blackList = {
 	gmod_camera = true
 }
 
-hook.Add('lrp-view.override', 'ifp-disableView', function()
+hook.Add('ifp.override', 'ifp-disableView', function()
 
 	local ply = LocalPlayer()
 	local wep = ply:GetActiveWeapon()
@@ -385,8 +385,6 @@ local function hideHead(doHide)
 	local ply = LocalPlayer()
 	if not IsValid(ply) then return end
 
-	if ply:InVehicle() then doHide = false end
-
 	local head = ply:LookupBone('ValveBiped.Bip01_Head1')
 	ply:ManipulateBoneScale(head, doHide and Vector(0.01, 0.01, 0.01) or Vector(1, 1, 1))
 
@@ -403,6 +401,15 @@ local function enableView()
 	hook.Add('HUDShouldDraw', 'ifp-hook', hideDefCrosshair)
 	hook.Add('PostDrawHUD', 'ifp-hook', blackScreen)
 	hook.Add('PlayerButtonDown', 'ifp-hook', useSightKey)
+
+	if ConVarExists('lrp_view') then
+		hook.Remove('CalcView', 'lrp-view')
+		hook.Remove('PostDrawTranslucentRenderables', 'lrp-view')
+		hook.Remove('CreateMove', 'lrp-view')
+		hook.Remove('HUDShouldDraw', 'lrp-view')
+		hook.Remove('PostDrawHUD', 'lrp-view')
+		hook.Remove('PlayerButtonDown', 'lrp-view')
+	end
 
 	hideHead(true)
 
@@ -431,7 +438,7 @@ end
 
 hook.Add('Think', 'ifp-override', function()
 
-	local override = hook.Run('lrp-view.override') == true
+	local override = hook.Run('ifp.override') == true
 
 	if override and ifpTable.active then
 		disableView()
