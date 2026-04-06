@@ -5,6 +5,7 @@ if SERVER then
 	AddCSLuaFile('ifp/cl_modifiers.lua')
 	AddCSLuaFile('ifp/cl_options_menu.lua')
 	AddCSLuaFile('ifp/cl_other_addons_fix.lua')
+	AddCSLuaFile('ifp/cl_weapons_view.lua')
 
 	-- load localization files
 	resource.AddSingleFile('resource/localization/en/gmod_ifp.properties')
@@ -17,5 +18,6 @@ else
 	include('ifp/cl_modifiers.lua')
 	include('ifp/cl_options_menu.lua')
 	include('ifp/cl_other_addons_fix.lua')
+	include('ifp/cl_weapons_view.lua')
 
 end
