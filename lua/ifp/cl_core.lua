@@ -15,7 +15,7 @@ local cv_chClrR = CreateClientConVar('cl_ifp_crosshair_color_r', '255')
 local cv_chClrG = CreateClientConVar('cl_ifp_crosshair_color_g', '255')
 local cv_chClrB = CreateClientConVar('cl_ifp_crosshair_color_b', '255')
 local cv_lockEnabled = CreateClientConVar('cl_ifp_lock_enabled', '1')
-local cv_maxLock = CreateClientConVar('cl_ifp_lock_max', '80')
+local cv_verticalLock = CreateClientConVar('cl_ifp_lock_vertical', '80', true, false, 'Vertical view angle lock', 75, 90)
 local cv_selectedMod = CreateClientConVar('cl_ifp_mod', '0') -- set 0 for disable view mod
 local cv_wepAimKey = CreateClientConVar('cl_ifp_key_weapon_aim', MOUSE_MIDDLE)
 local cv_fovMultiplier = CreateClientConVar('cl_ifp_fov_multiplier', '1', true, false, 'Float multiplier view FOV', 0.75, 1.25)
@@ -307,22 +307,34 @@ local function applyShaders()
 
 end
 
+local realAng, prevAng
 local function lockViewAngle(cmd)
 
 	local ply = LocalPlayer()
-
 	if not cv_lockEnabled:GetBool() or not ply:Alive() then return end
 
-	local down = math.Clamp(-cv_maxLock:GetInt() + 5, -90, -70)
-	local up = math.Clamp(cv_maxLock:GetInt(), 75, 90)
+	realAng = ply:EyeAngles()
+	prevAng = realAng
 
-	local viewAng = cmd:GetViewAngles()
+	local vLock = cv_verticalLock:GetInt()
 
+	realAng = realAng + cmd:GetViewAngles() - prevAng
 	if ply:InVehicle() then
-		cmd:SetViewAngles(Angle(math.min(math.max(viewAng.p, down+40), up-40), math.min(math.max(viewAng.y, 10), 170), viewAng.r))
+		realAng.y = realAng.y - 90
+		realAng:Normalize()
+		realAng.y = math.Clamp(realAng.y, -135, 135)
+		realAng.p = math.Clamp(realAng.p, -50, 50*(1-(math.abs(realAng.y)/125)^2))
+		local negate = realAng.y < 0
+		realAng.y = realAng.y + 90
+		realAng.r = (negate and -1 or 1) * (math.pow(realAng.y - 90, 2)) * (realAng.p - 0) / 28000
 	else
-		cmd:SetViewAngles(Angle(math.min(math.max(viewAng.p, down), up), viewAng.y, viewAng.r))
+		realAng.p = math.Clamp(realAng.p, -vLock, vLock)
+		realAng.r = 0
 	end
+	realAng:Normalize()
+
+	cmd:SetViewAngles(realAng)
+	prevAng = cmd:GetViewAngles()
 
 end
 
