@@ -17,6 +17,31 @@ ifpTable.weaponsView = {
 
 }
 
+local function saveData()
+	local json = util.TableToJSON(ifpTable.weaponsView)
+	file.Write('ifp/weapons_view_data.json', json)
+end
+
+local function loadData()
+	if file.IsDir('ifp', 'DATA') then
+		if file.Exists('ifp/weapons_view_data.json', 'DATA') then
+			local json = file.Read('ifp/weapons_view_data.json', 'DATA')
+			ifpTable.weaponsView = util.JSONToTable(json) or {}
+		end
+	else
+		file.CreateDir('ifp')
+		file.Write('ifp/weapons_view_data.json', '{}')
+	end
+end
+
+hook.Add('Initialize', 'ifp.weapons-view.init', loadData)
+
+local defWeaponData = {
+	offset = Vector(0, 0, 0),
+	angles = Angle(0, 0, 0),
+	znear = 1.5,
+}
+
 local function openWeaponsEditor(ply)
 
 	if not IsValid(ply) then return end
