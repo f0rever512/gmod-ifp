@@ -1,9 +1,25 @@
 surface.CreateFont( 'ifpFont.medium', {
-    font = 'Calibri',
-    size = 25,
-    weight = 300,
-    antialias = true,
-    extended = true
+	font = 'Calibri',
+	size = 25,
+	weight = 300,
+	antialias = true,
+	extended = true
+} )
+
+surface.CreateFont( 'ifpFont.small', {
+	font = 'Calibri',
+	size = 20,
+	weight = 300,
+	antialias = true,
+	extended = true
+} )
+
+surface.CreateFont( 'ifpFont.tiny', {
+	font = 'Calibri',
+	size = 16,
+	weight = 300,
+	antialias = true,
+	extended = true
 } )
 
 ifpTable.weaponsView = {
@@ -89,37 +105,58 @@ local function openWeaponsEditor(ply)
 		scrollPnl:Clear()
 
 		for _, wep in pairs(weaponsList) do
-			if not wep.Spawnable then continue end
+
+			if not wep.Spawnable or wep.Base == 'localrp_gun_base' then continue end
 
 			local wepClass = wep.ClassName
 			local wepName = wep.PrintName or wepClass
 
-			if searchText ~= '' and not string.find(string.lower(wepName), searchText, 1, true) then
+			if searchText ~= '' and not string.find(string.lower(wepClass), searchText, 1, true)
+				and not string.find(string.lower(wepName), searchText, 1, true) then
 				continue
 			end
 
-			local btn = vgui.Create('DButton', scrollPnl)
-			btn:Dock(TOP)
-			btn:DockMargin(0, 1, 0, 1)
-			btn:SetTall(56)
-			btn:SetText(wep.PrintName or wepClass)
+			local wepB = vgui.Create('DButton', scrollPnl)
+			wepB:Dock(TOP)
+			wepB:DockMargin(0, 1, 0, 1)
+			wepB:SetTall(56)
+			wepB:SetText('')
 
-			local defButton = vgui.GetControlTable('DButton').Paint
-			function btn:Paint(w, h)
-				if selectedWeapon == wepClass then
-					draw.RoundedBox(8, 0, 0, w, h, Color(10, 135, 80))
+			function wepB:Paint(w, h)
+				if ifpTable.weaponsView[wepClass] then
+					draw.RoundedBox(4, 0, 0, w, h, Color(140, 220, 145))
 				else
-					defButton(self, w, h)
+					draw.RoundedBox(4, 0, 0, w, h, Color(230, 160, 160))
+				end
+
+				if selectedWeapon == wepClass then
+					draw.RoundedBox(2, 0, 0, w, h, Color(0, 0, 0, 80))
 				end
 			end
 
-			local icon = vgui.Create('DImage', btn)
+			local icon = vgui.Create('DImage', wepB)
 			icon:Dock(LEFT)
 			icon:DockMargin(4, 4, 4, 4)
 			icon:SetWide(48)
 			icon:SetImage(wep.IconOverride or 'entities/' .. wepClass .. '.png', 'icon64/tool.png')
 
-			function btn:DoClick()
+			local nameL = vgui.Create('DLabel', wepB)
+			nameL:Dock(TOP)
+			nameL:DockMargin(8, 8, 0, 0)
+			nameL:SetText(wep.PrintName or wepClass)
+			nameL:SetFont('ifpFont.small')
+			nameL:SetTextColor(Color(0, 0, 0, 240))
+			nameL:SizeToContents()
+
+			local classL = vgui.Create('DLabel', wepB)
+			classL:Dock(BOTTOM)
+			classL:DockMargin(8, 0, 0, 8)
+			classL:SetText(wepClass)
+			classL:SetFont('ifpFont.tiny')
+			classL:SetTextColor(Color(0, 0, 0, 220))
+			classL:SizeToContents()
+
+			function wepB:DoClick()
 				selectedWeapon = wepClass
 			end
 		end
