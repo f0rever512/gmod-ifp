@@ -39,6 +39,10 @@ hook.Add('ifp.override', 'ifp-disableView', function()
 
 end)
 
+concommand.Add('ifp_toggle', function()
+	RunConsoleCommand(cv_viewEnabled:GetName(), cv_viewEnabled:GetBool() and '0' or '1')
+end)
+
 hook.Add('lrp-view.chShouldDraw', 'ifp-disableCh', function()
 	local ply = LocalPlayer()
 	if ply:InVehicle() or not ply:Alive() or not cv_chEnabled:GetBool()
