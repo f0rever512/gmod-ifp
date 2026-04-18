@@ -109,24 +109,13 @@ end
 local usingSight = true
 local smoothHandAng, visualRecoil
 
-ifpTable.customWepView = {
-
-	-- example:
-	-- ['weapon_class'] = {
-	-- 	offset = Vector(0, 0, 0),
-	-- 	angles = Angle(0, 0, 0),
-	-- 	znear = 1.5
-	-- }
-
-}
-
 local function weaponCalcView(ply, pos, ang, fov)
 
 	local wep = ply:GetActiveWeapon()
 	if not IsValid(wep) then return end
 
 	local lrpWep = wep.Base == 'localrp_gun_base'
-	local customWep = ifpTable.customWepView[wep:GetClass()]
+	local customWep = ifpTable.weaponsView[wep:GetClass()]
 
 	if not lrpWep and not customWep then return end
 
@@ -191,7 +180,7 @@ local function calcView(ply, pos, ang, fov)
 
 	local wep = ply:GetActiveWeapon()
 
-	if IsValid(wep) and (wep.Base == 'localrp_gun_base' or ifpTable.customWepView[wep:GetClass()]) then
+	if IsValid(wep) and (wep.Base == 'localrp_gun_base' or ifpTable.weaponsView[wep:GetClass()]) then
 		local view = weaponCalcView(ply, pos, ang, fov)
 		if view then return view end
 	end
@@ -379,7 +368,7 @@ local function useSightKey(ply, key)
 
 	if key == cv_wepAimKey:GetInt() then
 		local wep = ply:GetActiveWeapon()
-		if IsValid(wep) and ( (wep.Base == 'localrp_gun_base' and wep:GetReady()) or ifpTable.customWepView[wep:GetClass()] ) then
+		if IsValid(wep) and ( (wep.Base == 'localrp_gun_base' and wep:GetReady()) or ifpTable.weaponsView[wep:GetClass()] ) then
 			usingSight = not usingSight
 		end
 	end
