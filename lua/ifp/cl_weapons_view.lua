@@ -58,11 +58,9 @@ local defWeaponData = {
 	znear = 1.5,
 }
 
-local function openWeaponsEditor(ply)
+local ifpWeaponsEditor
 
-	if not IsValid(ply) then return end
-
-	local scale = ScrW() >= 1600 and 1 or 0.7
+local function openWeaponsEditor()
 
 	if IsValid(ifpWeaponsEditor) then ifpWeaponsEditor:Remove() end
 
@@ -76,9 +74,11 @@ local function openWeaponsEditor(ply)
 	f:MakePopup()
 	ifpWeaponsEditor = f
 
+	local screenScale = ScrW() >= 1600 and 1 or 0.7
+
 	local leftPnl = vgui.Create('DPanel', f)
-    leftPnl:Dock(LEFT)
-    leftPnl:SetWide(320 * scale)
+	leftPnl:Dock(LEFT)
+	leftPnl:SetWide(320 * screenScale)
 	function leftPnl:Paint(w, h)
 		draw.RoundedBox(0, 0, 0, w, h, color_transparent)
 	end
@@ -87,17 +87,147 @@ local function openWeaponsEditor(ply)
 	searchEntry:Dock(TOP)
 	searchEntry:DockMargin(0, 0, 0, 4)
 	searchEntry:SetTall(24)
-	searchEntry:SetPlaceholderText(language.GetPhrase('gmod_ifp.ui.weapons_editor.search'))
+	searchEntry:SetPlaceholderText(language.GetPhrase('spawnmenu.search'))
 
 	local scrollPnl = vgui.Create('DScrollPanel', leftPnl)
 	scrollPnl:Dock(FILL)
+
+	local rightPnl = vgui.Create('DPanel', f)
+	rightPnl:Dock(FILL)
+	rightPnl:DockMargin(4, 0, 0, 0)
+	rightPnl:DockPadding(0, 8, 0, 0)
+
+	local hintL = vgui.Create('DLabel', rightPnl)
+	hintL:SetText(language.GetPhrase('gmod_ifp.ui.weapons_editor.hint'))
+	hintL:SetFont('ifpFont.medium')
+	hintL:Dock(FILL)
+	hintL:SetContentAlignment(5)
+
+	local editPnl = vgui.Create('DPanel', rightPnl)
+	editPnl:Dock(FILL)
+	editPnl.Paint = nil
+
+	local function createNumSlider(parent, text, dock, margin, defValue, minValue, maxValue, callback)
+		local s = vgui.Create('DNumSlider', parent)
+		s:SetText(text and text or '')
+		s:SetMin(minValue)
+		s:SetMax(maxValue)
+		if defValue then
+			s:SetDefaultValue(defValue)
+			s:SetValue(defValue)
+		end
+		s:SetDecimals(2)
+
+		if dock then s:Dock(dock) end
+		if margin then s:DockMargin(unpack(margin)) end
+
+		function s:OnValueChanged(val) callback(val) end
+
+		return s
+	end
+
+	local selectedWeapon = nil
+
+	local function populateEditPanel(wepClass)
+
+		editPnl:Clear()
+		hintL:Hide()
+
+		local rScrollP = vgui.Create('DScrollPanel', editPnl)
+		rScrollP:Dock(FILL)
+		rScrollP:DockMargin(8, 8, 8, 8)
+
+		local editL = vgui.Create('DLabel', rScrollP)
+		editL:Dock(TOP)
+		editL:SetTall(25)
+		editL:SetText( string.format(language.GetPhrase('gmod_ifp.ui.weapons_editor.edit_panel.title'), wepClass) )
+		editL:SetFont('ifpFont.medium')
+		editL:SetTextColor(Color(255, 255, 255))
+		editL:DockMargin(0, 0, 0, 8)
+
+		local offL = vgui.Create('DLabel', rScrollP)
+		offL:Dock(TOP)
+		offL:SetTall(20)
+		offL:SetText('Offset:')
+		offL:SetTextColor(Color(200, 200, 200))
+		offL:DockMargin(0, 8, 0, 4)
+
+		local weaponData = table.Copy(ifpTable.weaponsView[wepClass] and ifpTable.weaponsView[wepClass] or defWeaponData)
+
+		createNumSlider(rScrollP, 'X:', TOP, nil, weaponData.offset.x, -360, 360, function(val)
+			weaponData.offset.x = val
+		end)
+
+		createNumSlider(rScrollP, 'Y:', TOP, nil, weaponData.offset.y, -360, 360, function(val)
+			weaponData.offset.y = val
+		end)
+
+		createNumSlider(rScrollP, 'Z:', TOP, nil, weaponData.offset.z, -360, 360, function(val)
+			weaponData.offset.z = val
+		end)
+
+		local angL = vgui.Create('DLabel', rScrollP)
+		angL:Dock(TOP)
+		angL:SetTall(20)
+		angL:SetText('Angles:')
+		angL:SetTextColor(Color(200, 200, 200))
+		angL:DockMargin(0, 12, 0, 4)
+
+		createNumSlider(rScrollP, 'Pitch:', TOP, nil, weaponData.angles.p, -360, 360, function(val)
+			weaponData.angles.p = val
+		end)
+
+		createNumSlider(rScrollP, 'Yaw:', TOP, nil, weaponData.angles.y, -360, 360, function(val)
+			weaponData.angles.y = val
+		end)
+
+		createNumSlider(rScrollP, 'Roll:', TOP, nil, weaponData.angles.r, -360, 360, function(val)
+			weaponData.angles.r = val
+		end)
+
+		local otherL = vgui.Create('DLabel', rScrollP)
+		otherL:Dock(TOP)
+		otherL:SetTall(20)
+		otherL:SetText('Other:')
+		otherL:DockMargin(0, 12, 0, 4)
+
+		createNumSlider(rScrollP, 'zNear:', TOP, nil, weaponData.znear, 0, 10, function(val)
+			weaponData.znear = val
+		end)
+
+		local removeB = vgui.Create('DButton', editPnl)
+		removeB:SetText(language.GetPhrase('gmod_ifp.ui.weapons_editor.edit_panel.remove'))
+		removeB:Dock(BOTTOM)
+		removeB:DockMargin(8, 8, 8, 8)
+		removeB:SetTall(32)
+		removeB:SetIcon('icon16/delete.png')
+		function removeB:DoClick()
+			ifpTable.weaponsView[wepClass] = nil
+			saveData()
+
+			editPnl:Clear()
+			hintL:Show()
+			selectedWeapon = nil
+		end
+
+		local saveB = vgui.Create('DButton', editPnl)
+		saveB:SetText(language.GetPhrase('gmod_ifp.ui.weapons_editor.edit_panel.add'))
+		saveB:Dock(BOTTOM)
+		saveB:DockMargin(8, 0, 8, 0)
+		saveB:SetTall(32)
+		saveB:SetIcon('icon16/add.png')
+		function saveB:DoClick()
+			ifpTable.weaponsView[wepClass] = weaponData or defWeaponData
+			saveData()
+		end
+
+	end
 
 	local weaponsList = weapons.GetList()
 	table.sort(weaponsList, function(a, b)
 		return (a.PrintName or a.ClassName) < (b.PrintName or b.ClassName)
 	end)
 
-	local selectedWeapon = nil
 	local searchText = ''
 
 	local function updateWeaponsList()
@@ -130,7 +260,7 @@ local function openWeaponsEditor(ply)
 				end
 
 				if selectedWeapon == wepClass then
-					draw.RoundedBox(2, 0, 0, w, h, Color(0, 0, 0, 80))
+					draw.RoundedBox(2, 0, 0, w, h, Color(0, 0, 0, 90))
 				end
 			end
 
@@ -158,7 +288,19 @@ local function openWeaponsEditor(ply)
 
 			function wepB:DoClick()
 				selectedWeapon = wepClass
+				populateEditPanel(wepClass)
 			end
+
+			function wepB:DoRightClick()
+				if ifpTable.weaponsView[wepClass] then
+					ifpTable.weaponsView[wepClass] = nil
+					saveData()
+				else
+					ifpTable.weaponsView[wepClass] = defWeaponData
+					saveData()
+				end
+			end
+
 		end
 	end
 
@@ -167,20 +309,6 @@ local function openWeaponsEditor(ply)
 	function searchEntry:OnTextChanged()
 		updateWeaponsList()
 	end
-
-	local rightPnl = vgui.Create('DPanel', f)
-    rightPnl:Dock(FILL)
-    rightPnl:DockMargin(4, 0, 0, 0)
-    rightPnl:DockPadding(0, 8, 0, 0)
-
-	local selectHint = vgui.Create('DLabel', rightPnl)
-    selectHint:SetText(language.GetPhrase('gmod_ifp.ui.weapons_editor.choose'))
-    selectHint:SetFont('ifpFont.medium')
-    selectHint:Dock(FILL)
-    selectHint:SetContentAlignment(5)
-
-	local editPnl = vgui.Create('DScrollPanel', rightPnl)
-    editPnl:Dock(FILL)
 
 end
 
