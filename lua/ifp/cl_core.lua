@@ -102,6 +102,8 @@ local function mainCalcView(ply, pos, ang, fov)
 		if mod.znear then view.znear = mod.znear end
 	end
 
+	ifpTable.viewPos = view.origin
+
 	return view
 
 end
@@ -171,6 +173,7 @@ local function weaponCalcView(ply, pos, ang, fov)
 	view.znear = 1.5
 
 	ifpTable.weaponViewActive = true
+	ifpTable.viewPos = view.origin
 
 	return view
 
@@ -214,8 +217,7 @@ local function renderWeaponView(pos, ang, fov)
 end
 
 local function preDrawViewModel(_, _, wep)
-	if not ifpTable.weaponViewActive then return end
-	if wep.aimProgress <= 0.8 then return true end
+	if ifpTable.weaponViewActive and wep.aimProgress <= 0.8 then return true end
 end
 
 local hl2weps = {
@@ -338,24 +340,16 @@ end
 local function blackScreen()
 
 	local ply = LocalPlayer()
-	if not IsValid(ply) then return end
-
-	local eyeAtt = ply:GetAttachment(ply:LookupAttachment('eyes'))
-	local handAtt = ply:GetAttachment(ply:LookupAttachment('anim_attachment_rh'))
-	if not eyeAtt or not handAtt then return end
-
-	if ply:Alive() and ply:GetMoveType() ~= MOVETYPE_NOCLIP then
-		local wep = ply:GetActiveWeapon()
-		local inSight = IsValid(wep) and wep.Base == 'localrp_gun_base' and wep.aimProgress >= 0.5
-
-		local hullTrace = util.TraceHull({
+	if ply:GetMoveType() ~= MOVETYPE_NOCLIP and not ply:InVehicle() then
+		local trHit = util.TraceHull({
 			maxs = Vector(5, 5, 3),
 			mins = Vector(-5, -5, -3),
-			start = inSight and handAtt.Pos or eyeAtt.Pos,
-			endpos = inSight and handAtt.Pos or eyeAtt.Pos
-		})
+			start = ifpTable.viewPos,
+			endpos = ifpTable.viewPos,
+			filter = ply
+		}).Hit
 
-		if hullTrace.Hit and hullTrace.Entity:GetClass() ~= 'player' and hullTrace.Entity:GetClass() ~= 'gmod_sent_vehicle_fphysics_base' then
+		if trHit then
 			draw.RoundedBox(0, -1, -1, ScrW() + 1, ScrH() + 1, Color(0, 0, 0, 255))
 		end
 	end
