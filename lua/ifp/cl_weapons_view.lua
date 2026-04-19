@@ -102,6 +102,7 @@ local function openWeaponsEditor()
 	hintL:SetFont('ifpFont.medium')
 	hintL:Dock(FILL)
 	hintL:SetContentAlignment(5)
+	hintL:SetDark(true)
 
 	local editPnl = vgui.Create('DPanel', rightPnl)
 	editPnl:Dock(FILL)
@@ -117,6 +118,7 @@ local function openWeaponsEditor()
 			s:SetValue(defValue)
 		end
 		s:SetDecimals(2)
+		s:SetDark(true)
 
 		if dock then s:Dock(dock) end
 		if margin then s:DockMargin(unpack(margin)) end
@@ -142,27 +144,27 @@ local function openWeaponsEditor()
 		editL:SetTall(25)
 		editL:SetText( string.format(language.GetPhrase('gmod_ifp.ui.weapons_editor.edit_panel.title'), wepClass) )
 		editL:SetFont('ifpFont.medium')
-		editL:SetTextColor(Color(255, 255, 255))
 		editL:DockMargin(0, 0, 0, 8)
+		editL:SetDark(true)
 
 		local offL = vgui.Create('DLabel', rScrollP)
 		offL:Dock(TOP)
 		offL:SetTall(20)
 		offL:SetText('Offset:')
-		offL:SetTextColor(Color(200, 200, 200))
 		offL:DockMargin(0, 8, 0, 4)
+		offL:SetDark(true)
 
 		local weaponData = table.Copy(ifpTable.weaponsView[wepClass] and ifpTable.weaponsView[wepClass] or defWeaponData)
 
-		createNumSlider(rScrollP, 'X:', TOP, nil, weaponData.offset.x, -360, 360, function(val)
+		createNumSlider(rScrollP, 'X:', TOP, nil, weaponData.offset.x, -64, 64, function(val)
 			weaponData.offset.x = val
 		end)
 
-		createNumSlider(rScrollP, 'Y:', TOP, nil, weaponData.offset.y, -360, 360, function(val)
+		createNumSlider(rScrollP, 'Y:', TOP, nil, weaponData.offset.y, -64, 64, function(val)
 			weaponData.offset.y = val
 		end)
 
-		createNumSlider(rScrollP, 'Z:', TOP, nil, weaponData.offset.z, -360, 360, function(val)
+		createNumSlider(rScrollP, 'Z:', TOP, nil, weaponData.offset.z, -64, 64, function(val)
 			weaponData.offset.z = val
 		end)
 
@@ -170,8 +172,8 @@ local function openWeaponsEditor()
 		angL:Dock(TOP)
 		angL:SetTall(20)
 		angL:SetText('Angles:')
-		angL:SetTextColor(Color(200, 200, 200))
 		angL:DockMargin(0, 12, 0, 4)
+		angL:SetDark(true)
 
 		createNumSlider(rScrollP, 'Pitch:', TOP, nil, weaponData.angles.p, -360, 360, function(val)
 			weaponData.angles.p = val
@@ -190,6 +192,7 @@ local function openWeaponsEditor()
 		otherL:SetTall(20)
 		otherL:SetText('Other:')
 		otherL:DockMargin(0, 12, 0, 4)
+		otherL:SetDark(true)
 
 		createNumSlider(rScrollP, 'zNear:', TOP, nil, weaponData.znear, 0, 10, function(val)
 			weaponData.znear = val
