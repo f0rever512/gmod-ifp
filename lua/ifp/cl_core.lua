@@ -153,8 +153,10 @@ local function weaponCalcView(ply, pos, ang, fov)
 		local muzzleAng = wep:GetMuzzleAng()
 		aimAng = Angle(muzzleAng.p - (not wep.SightPos and (muzzleAng.p * visualRecoil * 2.5) or 0), muzzleAng.y, muzzleAng.r)
 	else
-		aimPos = customWep.offset or Vector()
-		aimAng = customWep.angles or Angle()
+		local wepOff = customWep.offset
+		local wepAng = customWep.angles
+		aimPos = wepOff and Vector(wepOff.x, wepOff.y, wepOff.z) or vector_origin
+		aimAng = wepAng and Angle(wepAng.p, wepAng.y, wepAng.r) or angle_zero
 	end
 
 	local view = mainCalcView(ply, pos, ang, fov)
@@ -170,7 +172,7 @@ local function weaponCalcView(ply, pos, ang, fov)
 
 	view.origin = LerpVector(easedProgress, view.origin, viewAimingDisabled and pos or worldVector)
 	view.angles = LerpAngle(easedProgress, view.angles, viewAimingDisabled and ang or worldAngle)
-	view.znear = 1.5
+	view.znear = customWep and customWep.znear or 1.5
 
 	ifpTable.weaponViewActive = true
 	ifpTable.viewPos = view.origin

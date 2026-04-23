@@ -26,8 +26,8 @@ ifpTable.weaponsView = {
 
 	-- example:
 	-- ['weapon_class'] = {
-	-- 	offset = Vector(0, 0, 0),
-	-- 	angles = Angle(0, 0, 0),
+	-- 	offset = { x = 0, y = 0, z = 0 },
+	-- 	angles = { p = 0, y = 0, r = 0 },
 	-- 	znear = 1.5
 	-- },
 
@@ -53,8 +53,8 @@ end
 hook.Add('Initialize', 'ifp.weapons-view.init', loadData)
 
 local defWeaponData = {
-	offset = Vector(0, 0, 0),
-	angles = Angle(0, 0, 0),
+	offset = { x = 0, y = 0, z = 0 },
+	angles = { p = 0, y = 0, r = 0 },
 	znear = 1.5,
 }
 
