@@ -1,2 +1,2 @@
-# gmod-ifp
-Immersive First Person for Garry's Mod
+# Immersive First Person
+Realistic, usable and customizable first-person view that moves the player right in the character's eyes
