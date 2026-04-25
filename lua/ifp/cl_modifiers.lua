@@ -59,6 +59,11 @@ ifpTable.mods = {
 	-- }
 
 	{
+		name = 'Full Immersion',
+		useAttAngles = true,
+	},
+
+	{
 		name = 'BodyCam Mod',
 		att = 'forward',
 		useAttAngles = true,

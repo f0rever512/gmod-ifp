@@ -96,6 +96,8 @@ local function mainCalcView(ply, pos, ang, fov)
 				worldAng.r = 0
 			end
 			view.angles = worldAng
+		else
+			if mod.useAttAngles then view.angles = viewAtt.Ang end
 		end
 
 		if mod.fov then view.fov = view.fov + mod.fov end
