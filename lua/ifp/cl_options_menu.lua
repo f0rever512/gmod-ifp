@@ -121,5 +121,22 @@ local function createMenu(pnl)
 end
 
 hook.Add('PopulateToolMenu', 'ifp.createToolMenu', function()
-	spawnmenu.AddToolMenuOption('Utilities', 'IFP', 'cl_ifp_options', 'IFP Options', nil, nil, createMenu)
+	spawnmenu.AddToolMenuOption('Utilities', 'IFP', 'cl_ifp_settings', 'IFP Settings', nil, nil, createMenu)
+end)
+
+local defCVars = {
+	['cl_ifp_crosshair_enabled'] = '1',
+	['cl_ifp_crosshair_color_r'] = '255',
+	['cl_ifp_crosshair_color_g'] = '255',
+	['cl_ifp_crosshair_color_b'] = '255',
+	['cl_ifp_fov_multiplier'] = '1.00',
+	['cl_ifp_lock_enabled'] = '1',
+	['cl_ifp_lock_vertical'] = '80',
+	['cl_ifp_mod'] = '0',
+	['cl_ifp_key_weapon_aim'] = MOUSE_MIDDLE,
+	['cl_ifp_disable_when_aim'] = '1',
+}
+
+concommand.Add('ifp_reset_settings', function()
+	for cvar, val in pairs(defCVars) do RunConsoleCommand(cvar, val) end
 end)
