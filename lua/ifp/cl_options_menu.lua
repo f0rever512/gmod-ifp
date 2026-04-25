@@ -1,3 +1,6 @@
+local vgui = vgui
+local pairs = pairs
+local util = util
 local language = language
 local ifpMods = ifpTable.mods
 

@@ -1,3 +1,7 @@
+local AddCSLuaFile = AddCSLuaFile
+local resource = resource
+local include = include
+
 if SERVER then
 
 	-- client files

@@ -1,3 +1,5 @@
+local Vector = Vector
+local Angle = Angle
 local vgui = vgui
 local language = language
 local render = render
@@ -92,4 +94,5 @@ ifpTable.mods = {
 
 		end,
 	},
+
 }

@@ -1,3 +1,23 @@
+local surface = surface
+local Vector = Vector
+local Angle = Angle
+local util = util
+local file = file
+local hook = hook
+local IsValid = IsValid
+local vgui = vgui
+local language = language
+local ScrW = ScrW
+local ScrH = ScrH
+local draw = draw
+local unpack = unpack
+local string = string
+local table = table
+local weapons = weapons
+local pairs = pairs
+local Color = Color
+local concommand = concommand
+
 surface.CreateFont( 'ifpFont.medium', {
 	font = 'Calibri',
 	size = 25,

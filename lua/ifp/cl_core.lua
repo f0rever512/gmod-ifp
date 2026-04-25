@@ -1,12 +1,24 @@
-ifpTable = ifpTable or {}
-
+local CreateClientConVar = CreateClientConVar
+local LocalPlayer = LocalPlayer
+local IsValid = IsValid
+local LocalToWorld = LocalToWorld
+local FrameTime = FrameTime
+local Lerp = Lerp
+local Vector = Vector
+local Angle = Angle
+local LerpAngle = LerpAngle
+local LerpVector = LerpVector
+local render = render
+local ScrW = ScrW
+local ScrH = ScrH
+local Color = Color
 local hook = hook
 local util = util
 local cam = cam
 local surface = surface
-local GetConVar = GetConVar
 local math = math
-local inOutQuad = math.ease.InOutQuad
+
+ifpTable = ifpTable or {}
 
 -- immersive first person convars
 local cv_viewEnabled = CreateClientConVar('cl_ifp_enable', '1')
@@ -146,7 +158,7 @@ local function weaponCalcView(ply, pos, ang, fov)
 	if animIn then
 		aimProgress = math.Clamp(aimProgress - 0.4, 0, 1) / 0.6
 	end
-	local easedProgress = inOutQuad(aimProgress)
+	local easedProgress = math.ease.InOutQuad(aimProgress)
 
 	if useRecoil then
 		local recoilCoef = ply:IsListenServerHost() and 10 or 5
