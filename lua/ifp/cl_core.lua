@@ -43,7 +43,7 @@ concommand.Add('ifp_toggle', function()
 	RunConsoleCommand(cv_viewEnabled:GetName(), cv_viewEnabled:GetBool() and '0' or '1')
 end)
 
-hook.Add('lrp-view.chShouldDraw', 'ifp-disableCh', function()
+hook.Add('ifp.chShouldDraw', 'ifp-disableCh', function()
 	local ply = LocalPlayer()
 	if ply:InVehicle() or not ply:Alive() or not cv_chEnabled:GetBool()
 		or ifpTable.aimingWithoutView then return false end
@@ -249,7 +249,7 @@ local function drawCrosshair()
 
 	local ply = LocalPlayer()
 
-	local override = hook.Run('lrp-view.chShouldDraw', ply)
+	local override = hook.Run('ifp.chShouldDraw', ply)
 	if override == nil then
 		local wep, veh = ply:GetActiveWeapon(), ply:GetVehicle()
 		if IsValid(wep) and not blackList[wep:GetClass()] and ( wep.DrawCrosshair or hl2weps[wep:GetClass()] ) then
@@ -260,7 +260,7 @@ local function drawCrosshair()
 	if not override then return end
 
 	local aim = ply:EyeAngles():Forward()
-	local tr = hook.Run('lrp-view.chTraceOverride')
+	local tr = hook.Run('ifp.chTraceOverride')
 	if not tr then
 		local pos = ply:GetShootPos()
 		local endpos = pos + aim * 1600
@@ -273,12 +273,12 @@ local function drawCrosshair()
 		})
 	end
 
-	local _icon, _alpha, _scale = hook.Run('lrp-view.chOverride', tr)
+	local _icon, _alpha, _scale = hook.Run('ifp.chOverride', tr)
 	local chPos, chAng = LocalToWorld(chPosOff, chAngOff, tr.HitPos or endpos, ply:EyeAngles())
 
 	cam.Start3D2D(chPos, chAng, math.pow(tr.Fraction, 0.8) * (_scale or 0.25))
 	cam.IgnoreZ(true)
-	if not hook.Run('lrp-view.chPaint', tr, _icon) then
+	if not hook.Run('ifp.chPaint', tr, _icon) then
 		if _icon then
 			surface.SetDrawColor(255, 255, 255, _alpha or 150)
 		else
