@@ -395,13 +395,14 @@ local function useSightKey(ply, key)
 
 end
 
-local function hideHead(doHide)
+function ifpTable.hideHead(doHide)
 
 	local ply = LocalPlayer()
 	if not IsValid(ply) then return end
 
 	local head = ply:LookupBone('ValveBiped.Bip01_Head1')
 	ply:ManipulateBoneScale(head, doHide and Vector(0.01, 0.01, 0.01) or Vector(1, 1, 1))
+	ifpTable.headHidden = doHide
 
 end
 
@@ -426,7 +427,7 @@ local function enableView()
 		hook.Remove('PlayerButtonDown', 'lrp-view')
 	end
 
-	hideHead(true)
+	ifpTable.hideHead(true)
 
 	ifpTable.active = true
 	ifpTable.aimingWithoutView = false
@@ -445,7 +446,7 @@ local function disableView()
 	hook.Remove('PostDrawHUD', 'ifp-hook')
 	hook.Remove('PlayerButtonDown', 'ifp-hook')
 
-	hideHead(false)
+	ifpTable.hideHead(false)
 
 	ifpTable.active = false
 
