@@ -28,6 +28,7 @@ local cv_chClrG = CreateClientConVar('cl_ifp_crosshair_color_g', '255')
 local cv_chClrB = CreateClientConVar('cl_ifp_crosshair_color_b', '255')
 local cv_lockEnabled = CreateClientConVar('cl_ifp_lock_enabled', '1')
 local cv_verticalLock = CreateClientConVar('cl_ifp_lock_vertical', '80', true, false, 'Vertical view angle lock', 75, 90)
+local cv_forceShowHead = CreateClientConVar('cl_ifp_force_show_head', '0')
 local cv_selectedMod = CreateClientConVar('cl_ifp_mod', '0') -- set 0 for disable view mod
 local cv_wepAimKey = CreateClientConVar('cl_ifp_key_weapon_aim', MOUSE_MIDDLE)
 local cv_fovMultiplier = CreateClientConVar('cl_ifp_fov_multiplier', '1', true, false, 'Float multiplier view FOV', 0.75, 1.25)
@@ -397,6 +398,8 @@ end
 
 function ifpTable.hideHead(doHide)
 
+	if cv_forceShowHead:GetBool() then doHide = false end
+
 	local ply = LocalPlayer()
 	if not IsValid(ply) then return end
 
@@ -405,6 +408,10 @@ function ifpTable.hideHead(doHide)
 	ifpTable.headHidden = doHide
 
 end
+
+cvars.AddChangeCallback(cv_forceShowHead:GetName(), function()
+	if ifpTable.active then ifpTable.hideHead(not cv_forceShowHead:GetBool()) end
+end)
 
 local function enableView()
 

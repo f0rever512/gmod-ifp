@@ -62,6 +62,9 @@ local function createMenu(pnl)
 		s:SetEnabled(val)
 	end
 
+	pnl:CheckBox(language.GetPhrase('gmod_ifp.options.force_show_head'), 'cl_ifp_force_show_head')
+	pnl:ControlHelp(language.GetPhrase('gmod_ifp.options.force_show_head_help'))
+
 	local ifpModList = pnl:AddControl('listbox', {label = language.GetPhrase('gmod_ifp.options.mod_title')})
 	ifpModList:SetSortItems(false)
 
