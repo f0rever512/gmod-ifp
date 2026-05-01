@@ -117,7 +117,7 @@ local function mainCalcView(ply, pos, ang, fov)
 		if mod.znear then view.znear = mod.znear end
 	end
 
-	ifpTable.viewPos = view.origin
+	ifpTable.weaponViewActive = false
 
 	return view
 
@@ -190,24 +190,35 @@ local function weaponCalcView(ply, pos, ang, fov)
 	view.znear = customWep and customWep.znear or 1.5
 
 	ifpTable.weaponViewActive = true
-	ifpTable.viewPos = view.origin
 
 	return view
 
 end
 
+local antiClippingActive = false
+local traceMaxs, traceMins = Vector(5, 5, 3), Vector(-5, -5, -3)
+
 local function calcView(ply, pos, ang, fov)
 
-	local wep = ply:GetActiveWeapon()
+	local view = weaponCalcView(ply, pos, ang, fov) or mainCalcView(ply, pos, ang, fov)
 
-	if IsValid(wep) and (wep.Base == 'localrp_gun_base' or ifpTable.weaponsView[wep:GetClass()]) then
-		local view = weaponCalcView(ply, pos, ang, fov)
-		if view then return view end
+	if view and ply:GetMoveType() ~= MOVETYPE_NOCLIP and not ply:InVehicle() then
+		local tr = util.TraceHull({
+			start = ply:EyePos(),
+			endpos = view.origin,
+			maxs = traceMaxs,
+			mins = traceMins,
+			filter = ply
+		})
+
+		antiClippingActive = tr.Hit
+
+		if antiClippingActive then view.origin = tr.HitPos end
+
+		ifpTable.viewPos = view.origin
 	end
 
-	ifpTable.weaponViewActive = false
-
-	return mainCalcView(ply, pos, ang, fov)
+	return view
 
 end
 
@@ -223,7 +234,7 @@ local function renderWeaponView(pos, ang, fov)
 		w				= ScrW(),
 		h				= ScrH(),
 		angles			= view.angles,
-		origin			= view.origin,
+		origin			= antiClippingActive and ifpTable.viewPos or view.origin,
 		drawhud			= true,
 		dopostprocess	= true,
 		drawmonitors	= true,
@@ -354,25 +365,6 @@ local function hideDefCrosshair(name)
 	if name == 'CHudCrosshair' then return false end
 end
 
-local function blackScreen()
-
-	local ply = LocalPlayer()
-	if ply:GetMoveType() ~= MOVETYPE_NOCLIP and not ply:InVehicle() then
-		local trHit = util.TraceHull({
-			maxs = Vector(5, 5, 3),
-			mins = Vector(-5, -5, -3),
-			start = ifpTable.viewPos,
-			endpos = ifpTable.viewPos,
-			filter = ply
-		}).Hit
-
-		if trHit then
-			draw.RoundedBox(0, -1, -1, ScrW() + 1, ScrH() + 1, Color(0, 0, 0, 255))
-		end
-	end
-
-end
-
 local function useSightKey(ply, key)
 
 	if not IsFirstTimePredicted() then return end
@@ -422,7 +414,6 @@ local function enableView()
 	hook.Add('RenderScreenspaceEffects', 'ifp-hook', applyShaders)
 	hook.Add('CreateMove', 'ifp-hook', lockViewAngle)
 	hook.Add('HUDShouldDraw', 'ifp-hook', hideDefCrosshair)
-	hook.Add('PostDrawHUD', 'ifp-hook', blackScreen)
 	hook.Add('PlayerButtonDown', 'ifp-hook', useSightKey)
 
 	if ConVarExists('lrp_view') then
@@ -450,7 +441,6 @@ local function disableView()
 	hook.Remove('RenderScreenspaceEffects', 'ifp-hook')
 	hook.Remove('CreateMove', 'ifp-hook')
 	hook.Remove('HUDShouldDraw', 'ifp-hook')
-	hook.Remove('PostDrawHUD', 'ifp-hook')
 	hook.Remove('PlayerButtonDown', 'ifp-hook')
 
 	ifpTable.hideHead(false)
