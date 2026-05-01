@@ -32,6 +32,7 @@ local cv_forceShowHead = CreateClientConVar('cl_ifp_force_show_head', '0')
 local cv_selectedMod = CreateClientConVar('cl_ifp_mod', '0') -- set 0 for disable view mod
 local cv_wepAimKey = CreateClientConVar('cl_ifp_key_weapon_aim', MOUSE_MIDDLE)
 local cv_fovMultiplier = CreateClientConVar('cl_ifp_fov_multiplier', '1', true, false, 'Float multiplier view FOV', 0.75, 1.25)
+local cv_znear = CreateClientConVar('cl_ifp_znear', '3.00', true, false, 'Edit view zNear', 1, 5)
 local cv_disableWhenAiming = CreateClientConVar('cl_ifp_disable_when_aim', '0')
 
 local blackList = {
@@ -88,7 +89,7 @@ local function mainCalcView(ply, pos, ang, fov)
 		origin = pos,
 		angles = ang,
 		fov = fov * cv_fovMultiplier:GetFloat(),
-		znear = 3,
+		znear = cv_znear:GetFloat(),
 		drawviewer = true,
 	}
 

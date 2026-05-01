@@ -36,6 +36,9 @@ local function createMenu(pnl)
 
 	pnl:NumSlider(language.GetPhrase('gmod_ifp.options.fov_multiplier'), 'cl_ifp_fov_multiplier', 0.75, 1.25, 2)
 
+	pnl:NumSlider(language.GetPhrase('gmod_ifp.options.znear'), 'cl_ifp_znear', 1, 5, 2)
+	pnl:ControlHelp(language.GetPhrase('gmod_ifp.options.znear_help'))
+
 	local c = vgui.Create('DCheckBoxLabel')
 	c:SetText(language.GetPhrase('gmod_ifp.options.lock_enable'))
 	c:SetConVar('cl_ifp_lock_enabled')
@@ -136,6 +139,7 @@ local defCVars = {
 	['cl_ifp_crosshair_color_g'] = '255',
 	['cl_ifp_crosshair_color_b'] = '255',
 	['cl_ifp_fov_multiplier'] = '1.00',
+	['cl_ifp_znear'] = '3.00',
 	['cl_ifp_lock_enabled'] = '1',
 	['cl_ifp_lock_vertical'] = '80',
 	['cl_ifp_mod'] = '0',
