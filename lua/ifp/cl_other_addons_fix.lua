@@ -12,6 +12,11 @@ hook.Add('ifp.override', 'ifp.fix.arc9', function()
 
 end)
 
+-- RagMod Reworked
+hook.Add('ifp.override', 'ifp.fix.ragMod', function()
+	if ragmod and ragmod:IsRagdoll(LocalPlayer()) then return true end
+end)
+
 hook.Add('Initialize', 'ifp.fix.remove-lrp-hooks', function()
 	-- remove localrp guns RenderScene hook
 	hook.Remove('RenderScene', 'lrp-guns')
