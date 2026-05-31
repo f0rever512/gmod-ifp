@@ -129,8 +129,25 @@ local function createMenu(pnl)
 
 end
 
+local function createCompatibilityMenu(pnl)
+
+	pnl:Clear()
+
+	local l = vgui.Create('DLabel')
+	l:SetText(language.GetPhrase('gmod_ifp.options_compatibility.label'))
+	l:SetFont('ifp-font.spawnMenu.label')
+	l:SetDark(true)
+	l:SizeToContents()
+	pnl:AddItem(l)
+
+	pnl:CheckBox(language.GetPhrase('gmod_ifp.options_compatibility.glide_camera'), 'cl_ifp_glide_fix')
+	pnl:ControlHelp(language.GetPhrase('gmod_ifp.options_compatibility.glide_camera_help'))
+
+end
+
 hook.Add('PopulateToolMenu', 'ifp.createToolMenu', function()
 	spawnmenu.AddToolMenuOption('Utilities', 'IFP', 'cl_ifp_settings', 'IFP Settings', nil, nil, createMenu)
+	spawnmenu.AddToolMenuOption('Utilities', 'IFP', 'cl_ifp_compatibility', 'Compatibility', nil, nil, createCompatibilityMenu)
 end)
 
 local defCVars = {
