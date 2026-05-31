@@ -15,54 +15,52 @@ local function applyGlideFix()
 
 		ifpTable.hideHead(true)
 
-		timer.Simple(0.01, function()
-			if Glide and Glide.Camera then
-				Glide.Camera:Shutdown()
-				ply:SetEyeAngles(Angle(0, 90, 0))
+		if Glide and Glide.Camera then
+			Glide.Camera:Shutdown()
+			ply:SetEyeAngles(Angle(0, 90, 0))
 
-				-- remove original hook
-				hook.Remove('UpdateAnimation', 'Glide.OverridePlayerAnim')
+			-- remove original hook
+			hook.Remove('UpdateAnimation', 'Glide.OverridePlayerAnim')
 
-				-- add original glide hook without head angle fix
-				hook.Add( "UpdateAnimation", "Glide.OverridePlayerAnim", function( ply )
-					local vehicle = ply:GlideGetVehicle()
-					if not IsValid( vehicle ) then return end
-					if not vehicle.UpdatePlayerPoseParameters then return end
+			-- add original glide hook without head angle fix
+			hook.Add( "UpdateAnimation", "Glide.OverridePlayerAnim", function( ply )
+				local vehicle = ply:GlideGetVehicle()
+				if not IsValid( vehicle ) then return end
+				if not vehicle.UpdatePlayerPoseParameters then return end
 
-					-- Workarond to fix head angles
-					-- if CLIENT then
-					-- 	local parent = ply:GetParent()
+				-- Workarond to fix head angles
+				-- if CLIENT then
+				-- 	local parent = ply:GetParent()
 
-					-- 	if IsValid( parent ) then
-					-- 		local ang = parent:WorldToLocalAngles( ply:EyeAngles() )
+				-- 	if IsValid( parent ) then
+				-- 		local ang = parent:WorldToLocalAngles( ply:EyeAngles() )
 
-					-- 		-- For other clients, EyeAngles seems to have
-					-- 		-- "local-to-world" applied twice somehow
-					-- 		if ply ~= LocalPlayer() then
-					-- 			ang = parent:WorldToLocalAngles( ang )
-					-- 		end
+				-- 		-- For other clients, EyeAngles seems to have
+				-- 		-- "local-to-world" applied twice somehow
+				-- 		if ply ~= LocalPlayer() then
+				-- 			ang = parent:WorldToLocalAngles( ang )
+				-- 		end
 
-					-- 		ang[2] = NormalizeAngle( ang[2] - 90 )
+				-- 		ang[2] = NormalizeAngle( ang[2] - 90 )
 
-					-- 		ply:SetPoseParameter( "head_pitch", ang[1] )
-					-- 		ply:SetPoseParameter( "head_yaw", ang[2] )
-					-- 	end
-					-- end
+				-- 		ply:SetPoseParameter( "head_pitch", ang[1] )
+				-- 		ply:SetPoseParameter( "head_yaw", ang[2] )
+				-- 	end
+				-- end
 
-					local updated = vehicle:UpdatePlayerPoseParameters( ply )
+				local updated = vehicle:UpdatePlayerPoseParameters( ply )
 
-					if updated then
-						GAMEMODE:GrabEarAnimation( ply )
+				if updated then
+					GAMEMODE:GrabEarAnimation( ply )
 
-						if CLIENT then
-							GAMEMODE:MouthMoveAnimation( ply )
-						end
+					if CLIENT then
+						GAMEMODE:MouthMoveAnimation( ply )
 					end
+				end
 
-					return false
-				end )
-			end
-		end)
+				return false
+			end )
+		end
 
 	else
 
