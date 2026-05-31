@@ -12,6 +12,9 @@ local function applyGlideFix()
 	local veh = ply:GetVehicle()
 
 	if GetConVar('cl_ifp_enable'):GetBool() and cv_glideFix:GetBool() and IsValid(veh) then
+
+		ifpTable.hideHead(true)
+
 		timer.Simple(0.01, function()
 			if Glide and Glide.Camera then
 				Glide.Camera:Shutdown()
@@ -60,15 +63,20 @@ local function applyGlideFix()
 				end )
 			end
 		end)
+
 	else
+
 		if glideFunc then
 			hook.Remove('UpdateAnimation', 'Glide.OverridePlayerAnim')
 			hook.Add('UpdateAnimation', 'Glide.OverridePlayerAnim', glideFunc)
 		end
 
+		ifpTable.hideHead(false)
+
 		if IsValid(veh) then
 			Glide.Camera:Initialize(ply, veh:GetParent(), ply:GlideGetSeatIndex())
 		end
+
 	end
 
 end
