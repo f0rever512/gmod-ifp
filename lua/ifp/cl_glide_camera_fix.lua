@@ -69,9 +69,8 @@ local function applyGlideFix()
 			hook.Add('UpdateAnimation', 'Glide.OverridePlayerAnim', glideFunc)
 		end
 
-		ifpTable.hideHead(false)
-
 		if IsValid(veh) then
+			ifpTable.hideHead(false)
 			Glide.Camera:Initialize(ply, veh:GetParent(), ply:GlideGetSeatIndex())
 		end
 
@@ -84,5 +83,9 @@ hook.Add('Glide_OnLocalEnterVehicle', 'ifp.fix.glide-camera', function()
 end)
 
 cvars.AddChangeCallback('cl_ifp_glide_fix', function()
+	applyGlideFix()
+end)
+
+cvars.AddChangeCallback('cl_ifp_enable', function()
 	applyGlideFix()
 end)
