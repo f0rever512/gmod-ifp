@@ -146,8 +146,8 @@ local function createCompatibilityMenu(pnl)
 end
 
 hook.Add('PopulateToolMenu', 'ifp.createToolMenu', function()
-	spawnmenu.AddToolMenuOption('Utilities', 'IFP', 'cl_ifp_settings', 'IFP Settings', nil, nil, createMenu)
-	spawnmenu.AddToolMenuOption('Utilities', 'IFP', 'cl_ifp_compatibility', 'Compatibility', nil, nil, createCompatibilityMenu)
+	spawnmenu.AddToolMenuOption('Utilities', 'IFP', 'cl_ifp_settings', language.GetPhrase('gmod_ifp.options.label_button'), nil, nil, createMenu)
+	spawnmenu.AddToolMenuOption('Utilities', 'IFP', 'cl_ifp_compatibility', language.GetPhrase('gmod_ifp.options_compatibility.label_button'), nil, nil, createCompatibilityMenu)
 end)
 
 local defCVars = {
